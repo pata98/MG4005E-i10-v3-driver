@@ -29,8 +29,8 @@ class MotorDriver:
     RESPOND_TEMP            = 1
     RESPOND_CURRENT_L       = 2
     RESPOND_CURRENT_H       = 3
-    RESPOND_CTRL_L          = 4
-    RESPOND_CTRL_H          = 5
+    RESPOND_SPEED_L         = 4
+    RESPOND_SPEED_H         = 5
     RESPOND_ENCODER_L       = 6
     RESPOND_ENCODER_H       = 7
 
@@ -81,12 +81,12 @@ class MotorDriver:
         temp = message.data[self.RESPOND_TEMP]
         current = int.from_bytes([message.data[self.RESPOND_CURRENT_L], message.data[self.RESPOND_CURRENT_H]], byteorder='little', signed=True)
         encoder = int.from_bytes([message.data[self.RESPOND_ENCODER_L], message.data[self.RESPOND_ENCODER_H]], byteorder='little')
-        control = int.from_bytes([message.data[self.RESPOND_CTRL_L], message.data[self.RESPOND_CTRL_H]], byteorder='little', signed=True)
+        control = int.from_bytes([message.data[self.RESPOND_SPEED_L], message.data[self.RESPOND_SPEED_H]], byteorder='little', signed=True)
         return {
             'temperature': temp,
             'torque_current': current,
             'angle': encoder,
-            'control': control
+            'speed': control
         }
 
     #### Generalized Motor Command Function ########################################
