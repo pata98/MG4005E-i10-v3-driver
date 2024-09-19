@@ -26,6 +26,7 @@ class MotorDriver:
     CMD_ANGLE_CONTROL_SL_1  = 0xA5
     CMD_ANGLE_CONTROL_SL_2  = 0xA6
 
+    COMMAND_BYTE            = 0 
     RESPOND_TEMP            = 1
     RESPOND_CURRENT_L       = 2
     RESPOND_CURRENT_H       = 3
@@ -78,11 +79,13 @@ class MotorDriver:
     #### Response Parsing ##########################################################
     def _parse_response(self, message: can.Message) -> Dict[str, int]:
         """Parse response message to extract motor state values."""
+        command = message.data[self.COMMAND_BYTE]
         temp = message.data[self.RESPOND_TEMP]
         current = int.from_bytes([message.data[self.RESPOND_CURRENT_L], message.data[self.RESPOND_CURRENT_H]], byteorder='little', signed=True)
         encoder = int.from_bytes([message.data[self.RESPOND_ENCODER_L], message.data[self.RESPOND_ENCODER_H]], byteorder='little')
         control = int.from_bytes([message.data[self.RESPOND_SPEED_L], message.data[self.RESPOND_SPEED_H]], byteorder='little', signed=True)
         return {
+            'command': command,
             'temperature': temp,
             'torque_current': current,
             'angle': encoder,
@@ -149,6 +152,7 @@ class MotorDriver:
 
 
 if __name__ == "__main__":
+    print("CAN Communication tester")
     # Instantiate the driver
     driver = MotorDriver(channel='can0')
 
@@ -156,15 +160,18 @@ if __name__ == "__main__":
     motor_id = 1
 
     # Test sequence with returned status
+    print("Connection Test: Check CAN communication is well established.")
     motor_status = driver.motor_on(motor_id)
-    print("Motor On Status:", motor_status)
+    print('PASS') if motor_status['command'] == driver.CMD_MOTOR_ON else (print("FAIL!") or exit(0))
     time.sleep(1)
 
-    motor_status = driver.single_loop_angle_control_2(motor_id, driver.CCW, 180, 360)  # Single loop angle control with speed limit (CCW, 180 degrees, 360 dps)
+    """
+    # Single loop angle control with speed limit (CCW, 180 degrees, 360 dps)
+    motor_status = driver.single_loop_angle_control_2(motor_id, driver.CCW, 180, 360)  
     print("Motor Status after Angle Control:", motor_status)
     time.sleep(3)
-
-    motor_status = driver.single_loop_angle_control_2(motor_id, driver.CW, 0, 360)  # Single loop angle control with speed limit (CW, 0 degrees, 360 dps)
+    # Single loop angle control with speed limit (CW, 0 degrees, 360 dps)
+    motor_status = driver.single_loop_angle_control_2(motor_id, driver.CW, 0, 360)  
     print("Motor Status after Return to 0 Degrees:", motor_status)
     time.sleep(3)
 
@@ -173,3 +180,4 @@ if __name__ == "__main__":
     print("Motor Stop Status:", motor_status)
     motor_status = driver.motor_off(motor_id)
     print("Motor Off Status:", motor_status)
+    """
