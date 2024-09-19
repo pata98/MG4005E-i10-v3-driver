@@ -4,7 +4,7 @@
 # Contact       : yoopata@postech.ac.kr
 # Date          : 2024.09.10
 
-import MCP2515
+from package.MCP2515 import MCP2515
 import time
 
 class MotorDriver:
@@ -37,32 +37,23 @@ class MotorDriver:
     CW                      = 0x00
     CCW                     = 0x01
 
-    def __init__(self, channel='can0'):
+    def __init__(self):
         """
         Initialize the MotorDriver with a CAN interface using MCP2515.
         
         Args:
             channel (str): The CAN channel (default: 'can0').
         """
-        can = MCP2515.MCP2515()
-        can.Init()
+        self.can = MCP2515()
+        self.can.Init()
 
     #### CAN Message ###############################################################
-    def _build_message(self, command, payload=None):
-        """Build a CAN message with the command byte and optional payload."""
-        if payload is None:
-            payload = []
-        return [command] + payload + [0x00] * (self.DATA_LENGTH - len(payload) - 1)
-
-    def _control_value_bytes(self, value, byte_length=2, signed=True):
-        """Convert a control value into its byte representation."""
-        return [(value >> (8 * i)) & 0xFF for i in range(byte_length)]
-
+    ## Tx/Rx
     def _send_message(self, message_id, data):
         """Send a CAN message to the bus using MCP2515."""
-        message = can.Message(arbitration_id=message_id, data=data, is_extended_id=False)
+        message = self.can.Message(arbitration_id=message_id, data=data, is_extended_id=False)
         try:
-            self.bus.send(message)
+            self.can.Send(message)
         except can.CanError as e:
             raise RuntimeError("Failed to send message: {}".format(e))
 
@@ -72,9 +63,20 @@ class MotorDriver:
             message = self.bus.recv(1.0)
             if message is not None:
                 return message
-        except can.CanError as e:
+        except self.can.CanError as e:
             raise RuntimeError("Error occurred while receiving message: {}".format(e))
         return None
+    
+    ## Processing
+    def _build_message(self, command, payload=None):
+        """Build a CAN message with the command byte and optional payload."""
+        if payload is None:
+            payload = []
+        return [command] + payload + [0x00] * (self.DATA_LENGTH - len(payload) - 1)
+
+    def _control_value_bytes(self, value, byte_length=2, signed=True):
+        """Convert a control value into its byte representation."""
+        return [(value >> (8 * i)) & 0xFF for i in range(byte_length)]
 
     #### Response Parsing ##########################################################
     def _parse_response(self, message):
@@ -154,7 +156,7 @@ class MotorDriver:
 if __name__ == "__main__":
     print "CAN Communication tester"
     # Instantiate the driver
-    driver = MotorDriver(channel='can0')
+    driver = MotorDriver()
 
     # Example motor ID
     motor_id = 1
@@ -162,5 +164,9 @@ if __name__ == "__main__":
     # Test sequence with returned status
     print "Connection Test: Check CAN communication is well established."
     motor_status = driver.motor_on(motor_id)
-    print 'PASS' if motor_status['command'] == driver.CMD_MOTOR_ON else (print "FAIL!" or exit(0))
+    if motor_status['command'] == driver.CMD_MOTOR_ON:
+        print 'PASS'  
+    else:
+        print "FAIL!" 
+        exit(0)
     time.sleep(1)
