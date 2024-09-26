@@ -50,6 +50,12 @@ class MotorDriver:
         """
         # Initialize python-can bus
         self.bus = can.interface.Bus(bustype=bustype, channel=channel, bitrate=bitrate)
+    
+    def __del__(self):
+        """Free motor when program is finished"""
+        self.motor_off(driver.ID_MOTOR_PAN)
+        self.motor_off(driver.ID_MOTOR_TILT)
+
 
     #### CAN Message ###############################################################
     def _build_message(self, command, payload=None):
@@ -287,5 +293,5 @@ if __name__ == "__main__":
     # except KeyboardInterrupt:
     #     print("Exit")
 
-    motor_status = driver.motor_off(driver.ID_MOTOR_PAN)
-    motor_status = driver.motor_off(driver.ID_MOTOR_TILT)
+    # motor_status = driver.motor_off(driver.ID_MOTOR_PAN)
+    # motor_status = driver.motor_off(driver.ID_MOTOR_TILT)
